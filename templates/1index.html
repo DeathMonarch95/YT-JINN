@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube Video Info</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-6">
+  <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-xl p-6 space-y-4">
+    <h1 class="text-2xl font-bold text-center">YouTube Video Info</h1>
+    <input
+      id="urlInput"
+      type="text"
+      placeholder="Enter YouTube video URL"
+      class="w-full p-3 border rounded-xl"
+    />
+    <button
+      onclick="fetchInfo()"
+      class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl hover:bg-blue-700"
+    >
+      Fetch Info
+    </button>
+
+    <div id="result" class="hidden space-y-2">
+      <img id="thumbnail" class="w-full rounded-xl" />
+      <h2 id="title" class="text-xl font-semibold"></h2>
+      <p><strong>Uploader:</strong> <span id="uploader"></span></p>
+      <p><strong>Views:</strong> <span id="views"></span></p>
+      <p><strong>Upload Date:</strong> <span id="upload_date"></span></p>
+      <p><strong>Duration:</strong> <span id="duration"></span></p>
+    </div>
+
+    <div id="error" class="hidden text-red-600 font-semibold"></div>
+  </div>
+
+  <script>
+    async function fetchInfo() {
+      const url = document.getElementById("urlInput").value;
+      const resultDiv = document.getElementById("result");
+      const errorDiv = document.getElementById("error");
+      resultDiv.classList.add("hidden");
+      errorDiv.classList.add("hidden");
+
+      if (!url) {
+        errorDiv.textContent = "Please enter a YouTube URL.";
+        errorDiv.classList.remove("hidden");
+        return;
+      }
+
+      try {
+        const response = await fetch(`/cgi-bin/backend.py?url=${encodeURIComponent(url)}`);
+        const data = await response.json();
+
+        if (data.error) {
+          errorDiv.textContent = data.error;
+          errorDiv.classList.remove("hidden");
+        } else {
+          document.getElementById("thumbnail").src = data.thumbnail;
+          document.getElementById("title").textContent = data.title;
+          document.getElementById("uploader").textContent = data.uploader;
+          document.getElementById("views").textContent = data.views.toLocaleString();
+          document.getElementById("upload_date").textContent = formatDate(data.upload_date);
+          document.getElementById("duration").textContent = data.duration;
+
+          resultDiv.classList.remove("hidden");
+        }
+      } catch (err) {
+        errorDiv.textContent = "Failed to fetch video info.";
+        errorDiv.classList.remove("hidden");
+        console.error(err);
+      }
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr || dateStr.length !== 8) return dateStr;
+      return `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
+    }
+  </script>
+</body>
+</html>
